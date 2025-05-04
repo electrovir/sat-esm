@@ -24,211 +24,180 @@
  *     THE SOFTWARE.
  */
 
-const SAT = require('..');
-const assert = require('node:assert');
+import {assert} from '@augment-vir/assert';
+import {describe, it} from '@augment-vir/test';
+import {
+    Box,
+    Circle,
+    pointInCircle,
+    pointInPolygon,
+    Polygon,
+    Response,
+    testCircleCircle,
+    testPolygonCircle,
+    testPolygonPolygon,
+    Vector,
+} from './index.js';
 
-describe('Vector.scale', function () {
-    it('should scale by zero properly', function () {
-        const V = SAT.Vector;
-        const v1 = new V(5, 5);
+describe('Vector.scale', () => {
+    it('scales by zero properly', () => {
+        const v1 = new Vector(5, 5);
         v1.scale(10, 10);
-        assert(v1.x === 50);
-        assert(v1.y === 50);
+        assert.strictEquals(v1.x, 50 as number);
+        assert.strictEquals(v1.y, 50 as number);
 
         v1.scale(0, 1);
-        assert(v1.x === 0);
-        assert(v1.y === 50);
+        assert.strictEquals(v1.x, 0 as number);
+        assert.strictEquals(v1.y, 50 as number);
 
         v1.scale(1, 0);
-        assert(v1.x === 0);
-        assert(v1.y === 0);
+        assert.strictEquals(v1.x, 0);
+        assert.strictEquals(v1.y, 0);
     });
 });
 
-describe('Polygon.getCentroid', function () {
-    it('should calculate the correct value for a square', function () {
-        const V = SAT.Vector;
-        const P = SAT.Polygon;
-
-        // A square
-        const polygon = new P(new V(0, 0), [
-            new V(0, 0),
-            new V(40, 0),
-            new V(40, 40),
-            new V(0, 40),
+describe('Polygon.getCentroid', () => {
+    it('calculates the correct value for a square', () => {
+        /** A square. */
+        const polygon = new Polygon(new Vector(0, 0), [
+            new Vector(0, 0),
+            new Vector(40, 0),
+            new Vector(40, 40),
+            new Vector(0, 40),
         ]);
-        const c = polygon.getCentroid();
-        assert(c.x === 20);
-        assert(c.y === 20);
+        const centroid = polygon.getCentroid();
+        assert.strictEquals(centroid.x, 20);
+        assert.strictEquals(centroid.y, 20);
     });
 
-    it('should calculate the correct value for a triangle', function () {
-        const V = SAT.Vector;
-        const P = SAT.Polygon;
-
-        // A triangle
-        const polygon = new P(new V(0, 0), [
-            new V(0, 0),
-            new V(100, 0),
-            new V(50, 99),
+    it('calculates the correct value for a triangle', () => {
+        /** A triangle. */
+        const polygon = new Polygon(new Vector(0, 0), [
+            new Vector(0, 0),
+            new Vector(100, 0),
+            new Vector(50, 99),
         ]);
-        const c = polygon.getCentroid();
-        assert(c.x === 50);
-        assert(c.y === 33);
+        const centroid = polygon.getCentroid();
+        assert.strictEquals(centroid.x, 50);
+        assert.strictEquals(centroid.y, 33);
     });
 });
 
-describe('Collision', function () {
-    it('testCircleCircle', function () {
-        const V = SAT.Vector;
-        const C = SAT.Circle;
+describe('Collision', () => {
+    it('works with testCircleCircle', () => {
+        const circle1 = new Circle(new Vector(0, 0), 20);
+        const circle2 = new Circle(new Vector(30, 0), 20);
+        const response = new Response();
 
-        const circle1 = new C(new V(0, 0), 20);
-        const circle2 = new C(new V(30, 0), 20);
-        const response = new SAT.Response();
-        let collided = SAT.testCircleCircle(circle1, circle2, response);
+        assert.isTrue(testCircleCircle(circle1, circle2, response));
+        assert.strictEquals(response.overlap, 10);
+        assert.strictEquals(response.overlapV.x, 10);
+        assert.strictEquals(response.overlapV.y, 0);
 
-        assert(collided);
-        assert(response.overlap == 10);
-        assert(response.overlapV.x == 10 && response.overlapV.y === 0);
+        circle1.offset = new Vector(-10, -10);
 
-        circle1.offset = new V(-10, -10);
-        collided = SAT.testCircleCircle(circle1, circle2, response);
-        assert(!collided);
+        assert.isFalse(testCircleCircle(circle1, circle2, response));
     });
 
-    it('testPolygonCircle', function () {
-        const V = SAT.Vector;
-        const C = SAT.Circle;
-        const P = SAT.Polygon;
-
-        const circle = new C(new V(50, 50), 20);
-        // A square
-        const polygon = new P(new V(0, 0), [
-            new V(0, 0),
-            new V(40, 0),
-            new V(40, 40),
-            new V(0, 40),
+    it('works with testPolygonCircle', () => {
+        const circle = new Circle(new Vector(50, 50), 20);
+        /** A square. */
+        const polygon = new Polygon(new Vector(0, 0), [
+            new Vector(0, 0),
+            new Vector(40, 0),
+            new Vector(40, 40),
+            new Vector(0, 40),
         ]);
-        const response = new SAT.Response();
-        let collided = SAT.testPolygonCircle(polygon, circle, response);
+        const response = new Response();
 
-        assert(collided);
-        assert(response.overlap.toFixed(2) == '5.86');
-        assert(
-            response.overlapV.x.toFixed(2) == '4.14' && response.overlapV.y.toFixed(2) == '4.14',
-        );
+        assert.isTrue(testPolygonCircle(polygon, circle, response));
+        assert.strictEquals(response.overlap.toFixed(2), '5.86');
+        assert.strictEquals(response.overlapV.x.toFixed(2), '4.14');
+        assert.strictEquals(response.overlapV.y.toFixed(2), '4.14');
 
-        circle.offset = new V(10, 10);
-        collided = SAT.testPolygonCircle(polygon, circle, response);
-        assert(!collided);
+        circle.offset = new Vector(10, 10);
+        assert.isFalse(testPolygonCircle(polygon, circle, response));
     });
 
-    it('testPolygonCircle - line - not collide', function () {
-        const V = SAT.Vector;
-        const C = SAT.Circle;
-        const B = SAT.Box;
+    it('testPolygonCircle - line - not collide', () => {
+        const circle = new Circle(new Vector(50, 50), 20);
+        const polygon = new Box(new Vector(1000, 1000), 100, 0).toPolygon();
+        const response = new Response();
 
-        const circle = new C(new V(50, 50), 20);
-        const polygon = new B(new V(1000, 1000), 100, 0).toPolygon();
-        const response = new SAT.Response();
-        const collided = SAT.testPolygonCircle(polygon, circle, response);
-        assert(!collided);
+        assert.isFalse(testPolygonCircle(polygon, circle, response));
     });
 
-    it('testPolygonCircle - line - collide', function () {
-        const V = SAT.Vector;
-        const C = SAT.Circle;
-        const B = SAT.Box;
+    it('testPolygonCircle - line - collide', () => {
+        const circle = new Circle(new Vector(50, 50), 20);
+        const polygon = new Box(new Vector(50, 50), 100, 0).toPolygon();
+        const response = new Response();
 
-        const circle = new C(new V(50, 50), 20);
-        const polygon = new B(new V(50, 50), 100, 0).toPolygon();
-        const response = new SAT.Response();
-        const collided = SAT.testPolygonCircle(polygon, circle, response);
-
-        assert(collided);
-        assert(response.overlap.toFixed(2) == '20.00');
+        assert.isTrue(testPolygonCircle(polygon, circle, response));
+        assert.strictEquals(response.overlap.toFixed(2), '20.00');
     });
 
-    it('testPolygonPolygon', function () {
-        const V = SAT.Vector;
-        const P = SAT.Polygon;
-
-        // A square
-        const polygon1 = new P(new V(0, 0), [
-            new V(0, 0),
-            new V(40, 0),
-            new V(40, 40),
-            new V(0, 40),
+    it('testPolygonPolygon', () => {
+        /** A square. */
+        const polygon1 = new Polygon(new Vector(0, 0), [
+            new Vector(0, 0),
+            new Vector(40, 0),
+            new Vector(40, 40),
+            new Vector(0, 40),
         ]);
-        // A triangle
-        const polygon2 = new P(new V(30, 0), [
-            new V(0, 0),
-            new V(30, 0),
-            new V(0, 30),
+        /** A triangle. */
+        const polygon2 = new Polygon(new Vector(30, 0), [
+            new Vector(0, 0),
+            new Vector(30, 0),
+            new Vector(0, 30),
         ]);
-        const response = new SAT.Response();
-        const collided = SAT.testPolygonPolygon(polygon1, polygon2, response);
+        const response = new Response();
 
-        assert(collided);
-        assert(response.overlap == 10);
-        assert(response.overlapV.x == 10 && response.overlapV.y === 0);
+        assert.isTrue(testPolygonPolygon(polygon1, polygon2, response));
+        assert.strictEquals(response.overlap, 10);
+        assert.strictEquals(response.overlapV.x, 10);
+        assert.strictEquals(response.overlapV.y, 0);
     });
 });
 
-describe('No collision', function () {
-    it('testPolygonPolygon', function () {
-        const V = SAT.Vector;
-        const B = SAT.Box;
-
-        const box1 = new B(new V(0, 0), 20, 20).toPolygon();
-        const box2 = new B(new V(100, 100), 20, 20).toPolygon();
-        const collided = SAT.testPolygonPolygon(box1, box2);
+describe('No collision', () => {
+    it('testPolygonPolygon', () => {
+        const box1 = new Box(new Vector(0, 0), 20, 20).toPolygon();
+        const box2 = new Box(new Vector(100, 100), 20, 20).toPolygon();
+        assert.isFalse(testPolygonPolygon(box1, box2));
     });
 });
 
-describe('Point testing', function () {
-    it('pointInCircle', function () {
-        const V = SAT.Vector;
-        const C = SAT.Circle;
+describe('Point', () => {
+    it('works with pointInCircle', () => {
+        const circle = new Circle(new Vector(100, 100), 20);
 
-        const circle = new C(new V(100, 100), 20);
+        assert.isFalse(pointInCircle(new Vector(0, 0), circle));
+        assert.isTrue(pointInCircle(new Vector(110, 110), circle));
 
-        assert(!SAT.pointInCircle(new V(0, 0), circle)); // false
-        assert(SAT.pointInCircle(new V(110, 110), circle)); // true
-
-        circle.offset = new V(-10, -10);
-        assert(!SAT.pointInCircle(new V(110, 110), circle)); // false
+        circle.offset = new Vector(-10, -10);
+        assert.isFalse(pointInCircle(new Vector(110, 110), circle));
     });
 
-    it('pointInPolygon', function () {
-        const V = SAT.Vector;
-        const C = SAT.Circle;
-        const P = SAT.Polygon;
-
-        const triangle = new P(new V(30, 0), [
-            new V(0, 0),
-            new V(30, 0),
-            new V(0, 30),
+    it('works with pointInPolygon', () => {
+        const triangle = new Polygon(new Vector(30, 0), [
+            new Vector(0, 0),
+            new Vector(30, 0),
+            new Vector(0, 30),
         ]);
-        assert(!SAT.pointInPolygon(new V(0, 0), triangle)); // false
-        assert(SAT.pointInPolygon(new V(35, 5), triangle)); // true
+        assert.isFalse(pointInPolygon(new Vector(0, 0), triangle));
+        assert.isTrue(pointInPolygon(new Vector(35, 5), triangle));
     });
 
-    it('pointInPolygon (small)', function () {
-        const V = SAT.Vector;
-        const C = SAT.Circle;
-        const P = SAT.Polygon;
-
-        const v1 = new V(1, 1.1);
-        const p1 = new P(new V(0, 0), [
-            new V(2, 1),
-            new V(2, 2),
-            new V(1, 3),
-            new V(0, 2),
-            new V(0, 1),
-            new V(1, 0),
+    it('works with pointInPolygon (small)', () => {
+        const v1 = new Vector(1, 1.1);
+        const p1 = new Polygon(new Vector(0, 0), [
+            new Vector(2, 1),
+            new Vector(2, 2),
+            new Vector(1, 3),
+            new Vector(0, 2),
+            new Vector(0, 1),
+            new Vector(1, 0),
         ]);
-        assert(SAT.pointInPolygon(v1, p1));
+        assert.isTrue(pointInPolygon(v1, p1));
     });
 });
