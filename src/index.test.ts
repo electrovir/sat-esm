@@ -26,6 +26,7 @@
 
 import {assert} from '@augment-vir/assert';
 import {describe, it} from '@augment-vir/test';
+import type * as OriginalSatTypes from 'sat';
 import {
     Box,
     Circle,
@@ -37,7 +38,47 @@ import {
     testPolygonCircle,
     testPolygonPolygon,
     Vector,
+    type testCirclePolygon,
 } from './index.js';
+
+describe('types', () => {
+    it('equal original types', () => {
+        const originalBox: OriginalSatTypes.Box = new Box();
+        const originalCircle: OriginalSatTypes.Circle = new Circle();
+        const originalPolygon: OriginalSatTypes.Polygon = new Polygon();
+        const originalResponse: OriginalSatTypes.Response = new Response();
+        const originalVector: OriginalSatTypes.Vector = new Vector();
+
+        assert
+            .tsType<ReturnType<(typeof OriginalSatTypes)['pointInCircle']>>()
+            .equals<ReturnType<typeof pointInCircle>>();
+        assert
+            .tsType<ReturnType<(typeof OriginalSatTypes)['pointInPolygon']>>()
+            .equals<ReturnType<typeof pointInPolygon>>();
+        assert
+            .tsType<ReturnType<(typeof OriginalSatTypes)['testCircleCircle']>>()
+            .equals<ReturnType<typeof testCircleCircle>>();
+        assert
+            .tsType<ReturnType<(typeof OriginalSatTypes)['testPolygonCircle']>>()
+            .equals<ReturnType<typeof testPolygonCircle>>();
+        assert
+            .tsType<ReturnType<(typeof OriginalSatTypes)['testPolygonPolygon']>>()
+            .equals<ReturnType<typeof testPolygonPolygon>>();
+        assert
+            .tsType<ReturnType<(typeof OriginalSatTypes)['testCirclePolygon']>>()
+            .equals<ReturnType<typeof testCirclePolygon>>();
+    });
+    it("aren't always assignable from original types", () => {
+        // @ts-expect-error: toPolygon return type mismatch
+        const originalBox: Box = {} as OriginalSatTypes.Box;
+        // @ts-expect-error: original Circle type missing lots of properties
+        const originalCircle: Circle = {} as OriginalSatTypes.Circle;
+        // @ts-expect-error: original Polygon type missing properties
+        const originalPolygon: Polygon = {} as OriginalSatTypes.Polygon;
+        const originalResponse: Response = {} as OriginalSatTypes.Response;
+        const originalVector: Vector = {} as OriginalSatTypes.Vector;
+    });
+});
 
 describe('Vector.scale', () => {
     it('scales by zero properly', () => {
