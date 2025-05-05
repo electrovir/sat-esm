@@ -25,7 +25,6 @@
  */
 
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
-import {type Writable} from '@augment-vir/common';
 
 /**
  * Represents a vector in two dimensions with `x` and `y` components.
@@ -50,7 +49,7 @@ export class Vector {
      */
     public copy(
         /** The vector to copy from. */
-        other: Vector,
+        other: Readonly<Pick<Vector, 'x' | 'y'>>,
     ): this {
         this.x = other.x;
         this.y = other.y;
@@ -127,7 +126,7 @@ export class Vector {
      */
     public add(
         /** The vector to be added. */
-        other: Vector,
+        other: Readonly<Pick<Vector, 'x' | 'y'>>,
     ): this {
         this.x += other.x;
         this.y += other.y;
@@ -141,7 +140,7 @@ export class Vector {
      */
     public sub(
         /** The vector to be subtracted. */
-        other: Vector,
+        other: Readonly<Pick<Vector, 'x' | 'y'>>,
     ): this {
         this.x -= other.x;
         this.y -= other.y;
@@ -175,7 +174,7 @@ export class Vector {
      */
     public project(
         /** The vector to project onto. */
-        other: Vector,
+        other: Readonly<Pick<Vector, 'x' | 'y' | 'len2'>>,
     ): this {
         const amt = this.dot(other) / other.len2();
         this.x = amt * other.x;
@@ -191,7 +190,7 @@ export class Vector {
      */
     public projectN(
         /** The unit vector to project onto. */
-        unitOther: Vector,
+        unitOther: Readonly<Pick<Vector, 'x' | 'y'>>,
     ): this {
         const amt = this.dot(unitOther);
         this.x = amt * unitOther.x;
@@ -206,7 +205,7 @@ export class Vector {
      */
     public reflect(
         /** The vector representing the axis. */
-        axis: Vector,
+        axis: Readonly<Pick<Vector, 'x' | 'y' | 'len2'>>,
     ): this {
         this.project(axis).scale(2);
         this.x -= this.x;
@@ -222,7 +221,7 @@ export class Vector {
      */
     public reflectN(
         /** The unit vector representing the axis. */
-        unitAxis: Vector,
+        unitAxis: Readonly<Pick<Vector, 'x' | 'y'>>,
     ): this {
         this.projectN(unitAxis).scale(2);
         this.x -= this.x;
@@ -237,7 +236,7 @@ export class Vector {
      */
     public dot(
         /** The vector to dot this one against. */
-        other: Vector,
+        other: Readonly<Pick<Vector, 'x' | 'y'>>,
     ): number {
         return this.x * other.x + this.y * other.y;
     }
@@ -265,7 +264,7 @@ export class Circle {
     /** Radius of this circle. */
     public r: number;
     /** The current offset to apply to the radius. */
-    public offset = new Vector();
+    public offset: Readonly<Pick<Vector, 'x' | 'y'>> = new Vector();
 
     constructor(
         /**
@@ -309,7 +308,7 @@ export class Circle {
      */
     public setOffset(
         /** The new offset vector. */
-        offset: Vector,
+        offset: Readonly<Pick<Vector, 'x' | 'y'>>,
     ): this {
         this.offset = offset;
         return this;
@@ -324,9 +323,21 @@ export class Circle {
  */
 export class Polygon {
     public pos: Vector;
-    public readonly angle = 0 as number;
-    public readonly offset = new Vector();
-    public readonly points: Vector[] = [];
+    /**
+     * Do _not_ manually update this property. Use {@link Polygon.setAngle} Otherwise the calculated
+     * properties will not be updated correctly.
+     */
+    public angle = 0 as number;
+    /**
+     * Do _not_ manually update this property. Use {@link Polygon.setOffset} Otherwise the calculated
+     * properties will not be updated correctly.
+     */
+    public offset: Readonly<Vector> = new Vector();
+    /**
+     * Do _not_ manually update this property. Use {@link Polygon.setPoints} Otherwise the calculated
+     * properties will not be updated correctly.
+     */
+    public points: Vector[] = [];
 
     /**
      * Calculated points - this is what is used for underlying collisions and takes into account the
@@ -368,7 +379,7 @@ export class Polygon {
      */
     public setPoints(
         /** An array of vectors representing the points in the polygon, in counter-clockwise order. */
-        points: Vector[],
+        points: typeof this.points,
     ): this {
         /** Only re-allocate if this is a new polygon or the number of points has changed. */
         const lengthChanged = this.points.length !== points.length;
@@ -392,7 +403,7 @@ export class Polygon {
                 this.normals.push(new Vector());
             }
         }
-        (this as Writable<typeof this>).points = points;
+        this.points = points;
         return this._recalc();
     }
 
@@ -405,7 +416,7 @@ export class Polygon {
         /** The current rotation angle (in radians). */
         angle: number,
     ): this {
-        (this as Writable<typeof this>).angle = angle;
+        this.angle = angle;
         return this._recalc();
     }
 
@@ -416,9 +427,9 @@ export class Polygon {
      */
     public setOffset(
         /** The new offset vector. */
-        offset: Vector,
+        offset: typeof this.offset,
     ): this {
-        (this as Writable<typeof this>).offset = offset;
+        this.offset = offset;
         return this._recalc();
     }
 
@@ -569,7 +580,7 @@ export class Polygon {
  */
 export class Box {
     /** A vector representing the bottom-left of the box (i.e. the smallest x and smallest y value). */
-    public pos: Vector;
+    public pos: Readonly<Vector>;
     /** Width of the box. */
     public w: number;
     /** Height of the box. */
@@ -580,7 +591,7 @@ export class Box {
          * A vector representing the bottom-left of the box (i.e. the smallest x and smallest y
          * value). If this is omitted or `undefined`, the position will be `(0,0)`.
          */
-        position?: Vector | undefined,
+        position?: typeof this.pos | undefined,
         /** The width of the box. If this is omitted or `undefined`, the width will be `0`. */
         width?: number | undefined,
         /** The height of the box. If this is omitted or `undefined`, the height will be `0`. */
